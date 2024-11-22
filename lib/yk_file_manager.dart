@@ -1,4 +1,3 @@
-library ykftools;
 
 import 'dart:io';
 import 'dart:async';
