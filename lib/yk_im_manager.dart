@@ -20,6 +20,12 @@ mixin YkImManagerDelegate {
   Future joinGroup(dynamic params) async {
     return;
   }
+
+  /// 退出群组
+  @optionalTypeArgs
+  Future quickGroup(dynamic params) async {
+    return;
+  }
   
 }
 
@@ -72,5 +78,8 @@ class YkImManager {
     return;
   }
 
-  
+  Future quickGroup(dynamic params) async {
+    await _delegate?.quickGroup(params);
+    return;
+  }
 }
