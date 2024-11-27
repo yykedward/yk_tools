@@ -6,9 +6,9 @@ mixin YkRtcManagerAbStract {
 
   Future<void> init();
 
-  Future<void> enterRoom(String roomId, bool isLive);
+  Future<void> enterRoom(dynamic params);
 
-  Future<void> exitRoom();
+  Future<void> exitRoom(dynamic params);
 
   Future<void> dispose();
 
@@ -97,13 +97,13 @@ class YkRtcManager {
     return;
   }
 
-  Future<void> enterRoom(String roomId, bool isLive) async {
-    await _baseRTCAbStract?.enterRoom(roomId, isLive);
+  Future<void> enterRoom(dynamic params) async {
+    await _baseRTCAbStract?.enterRoom(params);
     return;
   }
 
-  Future<void> exitRoom() async {
-    await _baseRTCAbStract?.exitRoom();
+  Future<void> exitRoom(dynamic params) async {
+    await _baseRTCAbStract?.exitRoom(params);
     return;
   }
 
