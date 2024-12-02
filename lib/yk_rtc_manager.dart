@@ -2,9 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 
-mixin YkRtcManagerAbStract {
+mixin YkRtcManagerDelegate {
 
   Future<void> init();
+
+  Future login(dynamic params);
+
+  Future logout(dynamic params);
 
   Future<void> enterRoom(dynamic params);
 
@@ -13,64 +17,34 @@ mixin YkRtcManagerAbStract {
   Future<void> dispose();
 
   ///打开扬声器
-  @optionalTypeArgs
-  Future<void> openSpeaker(bool isOpen) async {
-    return;
-  }
+  Future<void> openSpeaker(bool isOpen);
 
   ///切换角色
-  @optionalTypeArgs
-  Future<void> switchRole(bool isAnchor) async {
-    return;
-  }
+  Future<void> switchRole(bool isAnchor);
 
   ///打开麦克风
-  @optionalTypeArgs
-  Future<void> openMic(bool isOpen) async {
-    return;
-  }
+  Future<void> openMic(bool isOpen);
 
   ///开始推流
-  @optionalTypeArgs
-  Future<void> startStreaming() async {
-    return;
-  }
+  Future<void> startStreaming();
 
   ///停止推流
-  @optionalTypeArgs
-  Future<void> stopStreaming() async {
-    return;
-  }
+  Future<void> stopStreaming();
 
   ///开始本地视频推流
-  @optionalTypeArgs
-  Future<void> startLocalPreview(bool frontCamera, int? viewId) async {
-    return;
-  }
+  Future<void> startLocalPreview(bool frontCamera, int? viewId);
 
   ///开始远端视频拉流
-  @optionalTypeArgs
-  Future<void> startRemoteView(String userId, int? viewId) async {
-    return;
-  }
+  Future<void> startRemoteView(String userId, int? viewId);
 
   ///停止远端视频拉流
-  @optionalTypeArgs
-  Future<void> stopRemoteView(String userId) async {
-    return;
-  }
+  Future<void> stopRemoteView(String userId);
 
   ///停止本地视频推流
-  @optionalTypeArgs
-  Future<void> stopLocalPreview() async {
-    return;
-  }
+  Future<void> stopLocalPreview();
 
   ///切换摄像头
-  @optionalTypeArgs
-  Future<int?> changeCamera(bool frontCamera) async {
-    return null;
-  }
+  Future<int?> changeCamera(bool frontCamera);
 }
 
 
@@ -85,83 +59,91 @@ class YkRtcManager {
 
   YkRtcManager._();
 
-  YkRtcManagerAbStract? _baseRTCAbStract;
+  YkRtcManagerDelegate? _delegate;
 
-  void config(YkRtcManagerAbStract stract) async {
-    _baseRTCAbStract = stract;
+  void config({required YkRtcManagerDelegate delegate}) async {
+    _delegate = delegate;
     return;
   }
 
   Future<void> init() async {
-    await _baseRTCAbStract?.init();
+    await _delegate?.init();
     return;
   }
 
+  Future login(dynamic params) {
+    return _delegate?.login(params) ?? Future.value();
+  }
+
+  Future logout(dynamic params) {
+    return _delegate?.logout(params) ?? Future.value();
+  }
+
   Future<void> enterRoom(dynamic params) async {
-    await _baseRTCAbStract?.enterRoom(params);
+    await _delegate?.enterRoom(params);
     return;
   }
 
   Future<void> exitRoom(dynamic params) async {
-    await _baseRTCAbStract?.exitRoom(params);
+    await _delegate?.exitRoom(params);
     return;
   }
 
   Future<void> openSpeaker(bool isOpen) async {
-    await _baseRTCAbStract?.openSpeaker(isOpen);
+    await _delegate?.openSpeaker(isOpen);
     return;
   }
 
   Future<void> switchRole(bool isAnchor) async {
-    await _baseRTCAbStract?.switchRole(isAnchor);
+    await _delegate?.switchRole(isAnchor);
     return;
   }
 
   Future<void> openMic(bool isOpen) async {
-    await _baseRTCAbStract?.openMic(isOpen);
+    await _delegate?.openMic(isOpen);
     return;
   }
 
   Future<void> startStreaming() async {
-    await _baseRTCAbStract?.startStreaming();
+    await _delegate?.startStreaming();
     return;
   }
 
   Future<void> stopStreaming() async {
-    await _baseRTCAbStract?.stopStreaming();
+    await _delegate?.stopStreaming();
     return;
   }
 
   Future<void> startLocalPreview(bool frontCamera, int? viewId) async {
-    await _baseRTCAbStract?.startLocalPreview(frontCamera, viewId);
+    await _delegate?.startLocalPreview(frontCamera, viewId);
     return;
   }
 
   Future<void> startRemoteView(String userId, int? viewId) async {
-    await _baseRTCAbStract?.startRemoteView(userId, viewId);
+    await _delegate?.startRemoteView(userId, viewId);
     return;
   }
 
   ///停止远端视频拉流
   Future<void> stopRemoteView(String userId) async {
-    await _baseRTCAbStract?.stopRemoteView(userId);
+    await _delegate?.stopRemoteView(userId);
     return;
   }
 
   ///停止本地视频推流
   Future<void> stopLocalPreview() async {
-    await _baseRTCAbStract?.stopLocalPreview();
+    await _delegate?.stopLocalPreview();
     return;
   }
 
   ///切换摄像头
   Future<int?> changeCamera(bool frontCamera) async {
-    return await _baseRTCAbStract?.changeCamera(frontCamera);
+    return await _delegate?.changeCamera(frontCamera);
   }
 
   Future<void> dispose() async {
-    await _baseRTCAbStract?.dispose();
-    _baseRTCAbStract = null;
+    await _delegate?.dispose();
+    _delegate = null;
     return;
   }
 }
