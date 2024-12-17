@@ -29,11 +29,11 @@ class YKNotificationCenter {
 
   void post(String name,{dynamic object, Map<String,dynamic>? userInfo}) {
     final notification = YKNotification(name, object, userInfo);
-    _observerStream.add({name:notification});
+    _observerStream.sink.add({name:notification});
   }
 
-  void addObserver(String name, YKNotificationCenterCallBack callBack) {
-    _observerStream.stream.listen((event) {
+  StreamSubscription addObserver(String name, YKNotificationCenterCallBack callBack) {
+    return _observerStream.stream.listen((event) {
       final notification = event[name];
       if (notification != null) {
         callBack?.call(notification!);

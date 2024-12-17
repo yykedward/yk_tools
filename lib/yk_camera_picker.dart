@@ -41,7 +41,7 @@ class YKCameraPhoto {
     }
   }
 
-  static Future<dynamic> picker({required dynamic params}) async {
+  static Future<dynamic> picker({dynamic params}) async {
     final isGrant = await YKCameraPhoto._checkAut();
     final delegate = YKCameraPhoto._getInstance().delegate;
     if (isGrant && delegate != null) {

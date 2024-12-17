@@ -32,7 +32,7 @@ class YKDiskManager {
       final handler = YKDiskManager.instance._handlerMap[element];
       if (handler != null) {
         try {
-          final result = await handler!.endModule(module, params);
+          await handler!.endModule(module, params);
         } catch (e) {
           isTermiated = true;
           errorCallBack?.call(e);
