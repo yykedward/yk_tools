@@ -1,84 +1,178 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 
-class YKRefreshConfigDelegate {
+class YKRefreshController<T> {
 
-  Future<void> Function()? beginRefresh;
+  Future Function()? _callRefresh;
+  Future Function()? _callLoad;
+  Future Function()? _endRefresh;
+  Future Function(bool noMoreData)? _endLoad;
 
-  Future<void> Function()? beginLoad;
-
-  Future<void> Function()? endRefresh;
-
-  Future<void> Function(bool isNoMoreData)? endLoad;
-
-  YKRefreshConfigDelegate({this.beginRefresh, this.beginLoad, this.endRefresh, this.endLoad});
-}
-
-class YKRefreshConfig {
-
-  static YKRefreshConfig? _instance;
-  static YKRefreshConfig get instance {
-    _instance ??= YKRefreshConfig._();
-    return _instance!;
+  Future callRefresh() {
+    return _callRefresh?.call() ?? Future.value();
   }
 
-  Widget Function(Widget widget, YKRefreshController? controller)? handleCallBack;
-
-  YKRefreshConfig._();
-}
-
-class YKRefreshController {
-
-  YKRefreshWidget? _widget;
-
-  YKRefreshConfigDelegate? delegate;
-
-  void Function()? headerCallBack;
-  void Function()? footerCallBack;
-
-  YKRefreshController({this.headerCallBack, this.footerCallBack});
-
-  void _setup({YKRefreshWidget? widget}) {
-    _widget = widget;
+  Future callLoad() {
+    return _callLoad?.call() ?? Future.value();
   }
 
-  Future<void> beginRefresh() async {
-    return delegate?.beginRefresh?.call();
+  Future endRefresh() {
+    return _endRefresh?.call() ?? Future.value();
   }
 
-  Future<void> beginLoad() async {
-    return delegate?.beginLoad?.call();
-  }
-
-  Future<void> endRefresh() async {
-    return delegate?.endRefresh?.call();
-  }
-
-  Future<void> endLoad(bool isNoMoreData) async {
-    return delegate?.endLoad?.call(isNoMoreData);
+  Future endLoad(bool noMoreData) {
+    return _endLoad?.call(noMoreData) ?? Future.value();
   }
 }
 
-class YKRefreshWidget extends StatelessWidget {
+class YKRefreshWidget<T> extends StatefulWidget {
+  final Widget Function(List<T> list) builder;
+  final YKRefreshController controller;
+  Future<List<T>> Function()? onRefresh;
+  Future<List<T>> Function(int page)? onLoad;
 
-  final Widget child;
+  YKRefreshWidget({super.key, required this.builder, required this.controller, this.onRefresh, this.onLoad});
 
-  YKRefreshController? _controller;
+  @override
+  State<YKRefreshWidget<T>> createState() => _YKRefreshWidgetState<T>();
+}
 
-  Widget? _refreshHandleWidget;
+class _YKRefreshWidgetState<T> extends State<YKRefreshWidget<T>> {
 
-  YKRefreshWidget({super.key, required this.child, YKRefreshController? controller}) {
-    _controller = controller;
-    _controller?._setup(widget: this);
-    _refreshHandleWidget = YKRefreshConfig.instance.handleCallBack?.call(child, _controller);
+  final List<T> _list = [];
+  int _currentPage = 1;
+  late EasyRefreshController _controller;
+  bool _didDispose = false;
+
+  @override
+  void initState() {
+    _controller = EasyRefreshController(controlFinishRefresh: widget.onRefresh != null, controlFinishLoad: widget.onLoad != null);
+
+    widget.controller._callRefresh = () async {
+      await _controller.callRefresh();
+      return;
+    };
+
+    widget.controller._callLoad = () async {
+      await _controller.callLoad();
+      return;
+    };
+
+    widget.controller._endRefresh = () async {
+      if (!_didDispose) {
+        setState(() {
+
+        });
+      }
+      _controller.finishLoad(IndicatorResult.success);
+      return;
+    };
+
+    widget.controller._endLoad = (noMoreData) async {
+      if (!_didDispose) {
+        setState(() {
+
+        });
+      }
+      if (noMoreData) {
+        _controller.finishLoad(IndicatorResult.noMore);
+      } else {
+        _controller.finishLoad(IndicatorResult.success);
+      }
+      return;
+    };
+
+    _requestHeader();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _didDispose = true;
+    super.dispose();
+  }
+
+  Future _requestHeader() async {
+    final result = await widget.onRefresh?.call();
+    if (result != null && result.isNotEmpty) {
+      _list.clear();
+      _list.addAll(result);
+    }
+    if (!_didDispose) {
+      setState(() {
+
+      });
+    }
+    _controller.finishRefresh(IndicatorResult.success);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("暂无数据"),
+            SizedBox(height: 10),
+            TextButton(onPressed: () {
+              _requestHeader();
+            }, child: Container(
+              constraints: BoxConstraints(maxWidth: 50, minHeight: 30),
+              decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.all(Radius.circular(4))),
+              child: Center(
+                child: Text("刷新", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+            ))
+          ],
+        ),
+      );
+    }
 
-    final widget = _refreshHandleWidget ?? child;
+    return _refreshList();
+  }
 
-    return widget;
+  Widget _refreshList() {
+    return EasyRefresh(
+      controller: _controller,
+      onRefresh: () async {
+        await _requestHeader();
+      },
+      onLoad: () async {
+        final thisPath = _currentPage + 1;
+        final result = await widget.onLoad?.call(_currentPage);
+        if (result != null) {
+          if (result.isNotEmpty) {
+            _list.addAll(result);
+            _currentPage = thisPath;
+            if (!_didDispose) {
+              setState(() {
+
+              });
+            }
+            _controller.finishLoad(IndicatorResult.success);
+          } else {
+            if (!_didDispose) {
+              setState(() {
+
+              });
+            }
+            _controller.finishLoad(IndicatorResult.noMore);
+          }
+        } else {
+          if (!_didDispose) {
+            setState(() {
+
+            });
+          }
+          _controller.finishLoad(IndicatorResult.success);
+        }
+      },
+      child: widget.builder.call(_list),
+    );
   }
 }
