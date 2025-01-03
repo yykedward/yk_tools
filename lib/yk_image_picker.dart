@@ -50,8 +50,8 @@ class YKImagePicker {
     }
 
     // 检查权限
-    instance._isGranted = await instance._delegate!.checkAuth();
-    if (!instance._isGranted) {
+    final hasPermission = await instance._delegate!.checkAuth();
+    if (!hasPermission) {
       throw StateError('Image picker permission not granted');
     }
 
@@ -69,8 +69,15 @@ class YKImagePicker {
       return false;
     }
     
-    instance._isGranted = await instance._delegate!.checkAuth();
-    return instance._isGranted;
+    try {
+      final hasPermission = await instance._delegate!.checkAuth();
+      instance._isGranted = hasPermission;
+      return hasPermission;
+    } catch (e) {
+      debugPrint('Permission check error: $e');
+      instance._isGranted = false;
+      return false;
+    }
   }
 
   /// 重置状态

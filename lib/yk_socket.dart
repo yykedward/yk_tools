@@ -1,158 +1,262 @@
-
-
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
-class YKSocketDelegate {
-
-  void Function()? connectFailCallBack;
-
-  void Function()? connectSuccessCallBack;
-
-  void Function(String msg)? errorMsgCallBack;
-
-  void Function(String msg)? logMsgCallBack;
-
-  void Function()? closeCallBack;
-
-  void Function()? beginRelink;
-
-  YKSocketDelegate({this.connectFailCallBack, this.connectSuccessCallBack, this.errorMsgCallBack, this.logMsgCallBack, this.closeCallBack, this.beginRelink});
+/// Socket 连接状态
+enum SocketState {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
 }
 
-class YKSocketController {
+/// Socket 代理回调
+class YKSocketDelegate {
+  final void Function()? onConnectFail;
+  final void Function()? onConnectSuccess;
+  final void Function(String message)? onError;
+  final void Function(String message)? onLog;
+  final void Function()? onClose;
+  final void Function()? onReconnecting;
 
+  const YKSocketDelegate({
+    this.onConnectFail,
+    this.onConnectSuccess,
+    this.onError,
+    this.onLog,
+    this.onClose,
+    this.onReconnecting,
+  });
+}
+
+/// Socket 控制器回调
+class YKSocketControllerCallback {
+  final Future<void> Function(String url) connect;
+  final Future<void> Function() close;
+  final Future<void> Function(dynamic message) send;
+  final Future<void> Function() dispose;
+  final SocketState Function() getState;
+
+  const YKSocketControllerCallback({
+    required this.connect,
+    required this.close,
+    required this.send,
+    required this.dispose,
+    required this.getState,
+  });
+}
+
+/// Socket 控制器
+class YKSocketController {
+  YKSocketControllerCallback? _callback;
   YKSocket? _socket;
 
-  bool get isConnected => _socket?._isConnected ?? false;
+  /// 获取连接状态
+  bool get isConnected => state == SocketState.connected;
 
-  StreamController<dynamic> _messageStreamController = StreamController<dynamic>.broadcast();
+  /// 获取当前状态
+  SocketState get state => _callback?.getState() ?? SocketState.disconnected;
 
-  Stream<dynamic> get messageStream => _messageStreamController.stream;
+  /// 连接
+  Future<void> connect(String url) => _callback?.connect(url) ?? Future.value();
 
-  StreamController<bool> _connectedStreamController = StreamController<bool>.broadcast();
+  /// 关闭连接
+  Future<void> close() => _callback?.close() ?? Future.value();
 
-  Stream<bool> get connectedStream => _connectedStreamController.stream;
+  /// 发送消息
+  Future<void> send(dynamic message) => _callback?.send(message) ?? Future.value();
 
-  Future<void> connect() async {
-    return _socket?._connect();
-  }
-
-  Future<void> close() async {
-    return _socket?._close();
-  }
-
-  Future<void> send(dynamic msg) async {
-    return _socket?._send(msg);
-  }
-
+  /// 释放资源
   Future<void> dispose() async {
-    return _socket?._dispose();
+    await _callback?.dispose();
+    _callback = null;
+    _socket = null;
   }
 }
 
+/// WebSocket 实现
 class YKSocket {
+  final Duration reconnectDelay;
+  final int maxReconnectAttempts;
+  String? _url;
 
-  final String url;
+  final _messageController = StreamController<dynamic>.broadcast();
+  final _stateController = StreamController<SocketState>.broadcast();
 
-  YKSocketDelegate? delegate;
-
-  YKSocketController? _controller;
+  YKSocket({
+    this.reconnectDelay = const Duration(seconds: 2),
+    this.maxReconnectAttempts = 3,
+  });
 
   WebSocket? _webSocket;
+  StreamSubscription? _messageSubscription;
+  YKSocketController? _controller;
+  YKSocketDelegate? _delegate;
+  SocketState _state = SocketState.disconnected;
+  int _reconnectAttempts = 0;
+  Timer? _reconnectTimer;
 
-  StreamSubscription? _messageStream;
+  /// 获取当前状态
+  SocketState get state => _state;
 
-  bool _isConnected = false;
+  /// 获取消息流
+  Stream<dynamic> get messageStream => _messageController.stream;
 
-  int _relinkTime = 0;
+  /// 获取状态流
+  Stream<SocketState> get stateStream => _stateController.stream;
 
-  YKSocket({required this.url, this.delegate, YKSocketController? controller}) {
+  /// 初始化
+  void initialize({
+    required YKSocketController controller,
+    YKSocketDelegate? delegate,
+  }) {
     _controller = controller;
-    _controller?._socket = this;
+    _delegate = delegate;
+    controller._socket = this;
+    
+    // 设置控制器回调
+    controller._callback = YKSocketControllerCallback(
+      connect: _connect,
+      close: _close,
+      send: _send,
+      dispose: _dispose,
+      getState: () => state,
+    );
   }
 
-  Future<void> _connect() async {
-
-    await WebSocket.connect(url).then((value) {
-      _webSocket = value;
-
-      delegate?.connectSuccessCallBack?.call();
-
-      if (_messageStream != null) {
-        _messageStream!.cancel();
-      }
-      _messageStream = value.listen((message) {
-        try {
-          _controller?._messageStreamController.add(message);
-        } catch (e) {
-          delegate?.errorMsgCallBack?.call(e.toString());
-        }
-      });
-
-      _isConnected = true;
-      _controller?._connectedStreamController.add(true);
-
-      value.done.then((v) {
-        int closeCode = value.closeCode ?? 0;
-        if (closeCode != 0) {
-          if (closeCode != 1000) {
-            delegate?.logMsgCallBack?.call("socket 断开连接 closeCode:$closeCode");
-            _relink();
-          }
-        } else {
-          _isConnected = false;
-          _controller?._connectedStreamController.add(false);
-        }
-      });
-      
-
-    }).onError((error, stackTrace) {
-      delegate?.connectFailCallBack?.call();
-    });
-
-  }
-
-  Future<void> _send(dynamic msg) async {
+  /// 处理消息
+  void _handleMessage(dynamic message) {
     try {
-      return _webSocket?.add(msg);
+      _messageController.add(message);
     } catch (e) {
-      if (_webSocket != null && _isConnected) {
-        if (_webSocket!.closeCode != 1000) {
-           await _relink();
-        } else {
-          delegate?.errorMsgCallBack?.call(e.toString());
-        }
-      }
+      _delegate?.onError?.call('Message handling failed: $e');
+    }
+  }
+
+  /// 更新状态
+  void _updateState(SocketState newState) {
+    _state = newState;
+    _stateController.add(newState);
+  }
+
+  /// 释放资源
+  Future<void> _dispose() async {
+    await _close();
+    _url = null;
+    await _messageController.close();
+    await _stateController.close();
+    _controller = null;
+    _delegate = null;
+  }
+
+  /// 连接
+  Future<void> _connect(String url) async {
+    if (_state == SocketState.connected || _state == SocketState.connecting) {
       return;
     }
-  }
 
-  Future<void> _relink() async {
-    await _webSocket?.close();
-    int nowTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if ((nowTime - _relinkTime) > 2) {
-      _relinkTime = nowTime;
-      delegate?.beginRelink?.call();
-      delegate?.logMsgCallBack?.call("正在尝试重连");
-      await _connect();
+    _url = url;
+    _updateState(SocketState.connecting);
+
+    try {
+      _webSocket = await WebSocket.connect(url);
+      _setupWebSocket(_webSocket!);
+      _reconnectAttempts = 0;
+      _delegate?.onConnectSuccess?.call();
+    } catch (e) {
+      _delegate?.onConnectFail?.call();
+      _delegate?.onError?.call('Connection failed: $e');
+      _handleConnectionError();
     }
-    return;
   }
 
+  /// 发送消息
+  Future<void> _send(dynamic message) async {
+    if (_state != SocketState.connected) {
+      throw StateError('Socket is not connected');
+    }
+
+    try {
+      _webSocket?.add(message);
+    } catch (e) {
+      _delegate?.onError?.call('Send failed: $e');
+      if (_webSocket?.closeCode != 1000) {
+        await _reconnect();
+      }
+    }
+  }
+
+  /// 关闭连接
   Future<void> _close() async {
-    await _webSocket?.close();
-    delegate?.closeCallBack?.call();
-    _isConnected = false;
-    _controller?._connectedStreamController.add(false);
-    return;
+    _reconnectAttempts = maxReconnectAttempts; // 防止自动重连
+    await _cleanUp();
+    _delegate?.onClose?.call();
   }
 
-  Future<void> _dispose() async {
-    await _close().then((value) {
-      _isConnected = false;
-      _controller?._connectedStreamController.add(false);
-      _controller?._messageStreamController.close();
+  /// 重连
+  Future<void> _reconnect() async {
+    if (_state == SocketState.reconnecting || 
+        _reconnectAttempts >= maxReconnectAttempts ||
+        _url == null) {
+      return;
+    }
+
+    _updateState(SocketState.reconnecting);
+    _delegate?.onReconnecting?.call();
+    _delegate?.onLog?.call('Attempting to reconnect...');
+
+    _reconnectAttempts++;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(reconnectDelay, () {
+      _connect(_url!);
     });
+  }
+
+  /// 设置 WebSocket
+  void _setupWebSocket(WebSocket socket) {
+    _messageSubscription?.cancel();
+    _messageSubscription = socket.listen(
+      _handleMessage,
+      onDone: _handleDisconnect,
+      onError: _handleError,
+      cancelOnError: false,
+    );
+    
+    _updateState(SocketState.connected);
+  }
+
+  /// 处理断开连接
+  void _handleDisconnect() {
+    final closeCode = _webSocket?.closeCode ?? 0;
+    if (closeCode != 1000 && closeCode != 0) {
+      _delegate?.onLog?.call('Socket disconnected with code: $closeCode');
+      _reconnect();
+    } else {
+      _updateState(SocketState.disconnected);
+    }
+  }
+
+  /// 处理错误
+  void _handleError(dynamic error) {
+    _delegate?.onError?.call('Socket error: $error');
+    _handleConnectionError();
+  }
+
+  /// 处理连接错误
+  void _handleConnectionError() {
+    if (_reconnectAttempts < maxReconnectAttempts) {
+      _reconnect();
+    } else {
+      _updateState(SocketState.disconnected);
+    }
+  }
+
+  /// 清理资源
+  Future<void> _cleanUp() async {
+    _reconnectTimer?.cancel();
+    await _messageSubscription?.cancel();
+    await _webSocket?.close();
+    _webSocket = null;
+    _updateState(SocketState.disconnected);
   }
 }
