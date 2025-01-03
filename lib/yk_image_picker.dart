@@ -1,54 +1,81 @@
-
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 
+/// 图片选择器代理接口
 mixin YKImagePickerDelegate {
-
+  /// 初始化设置
   Future<void> setup();
 
-  Future<bool> checkAut();
+  /// 检查权限
+  Future<bool> checkAuth();
 
-  Future<dynamic> pickImage(dynamic params, int maxCount);
+  /// 选择图片
+  Future<dynamic> pickImage(Map<String, dynamic>? params, int maxCount);
 }
 
+/// 图片选择器工具类
 class YKImagePicker {
-  bool get isGrant => _isGrant;
-
-  static YKImagePicker? _instance;
-  bool _isGrant = false;
-  YKImagePickerDelegate? delegate;
-
-  factory YKImagePicker._getInstance() {
-    _instance ??= YKImagePicker._();
-    return _instance!;
-  }
-
+  // 单例实现
+  static final YKImagePicker instance = YKImagePicker._();
   YKImagePicker._();
 
-  static void setup({required YKImagePickerDelegate delegate}) async {
-    YKImagePicker._getInstance().delegate = delegate;
-    await delegate.setup();
+  // 私有变量
+  YKImagePickerDelegate? _delegate;
+  bool _isGranted = false;
+
+  /// 获取权限状态
+  bool get isGranted => _isGranted;
+
+  /// 初始化设置
+  static Future<void> setup({
+    required YKImagePickerDelegate delegate,
+  }) async {
+    instance._delegate = delegate;
+    try {
+      await delegate.setup();
+      instance._isGranted = await delegate.checkAuth();
+    } catch (e) {
+      instance._isGranted = false;
+      rethrow;
+    }
   }
 
-  static Future<bool> _checkAut() async {
-    if (YKImagePicker
-        ._getInstance()
-        .delegate != null) {
-      var isGrant = await YKImagePicker._getInstance().delegate!.checkAut();
-      return isGrant;
-    } else {
+  /// 选择图片
+  static Future<T?> pick<T>({
+    required Map<String, dynamic>? params,
+    int maxCount = 9,
+  }) async {
+    if (instance._delegate == null) {
+      throw StateError('Image picker delegate not set. Call setup() first.');
+    }
+
+    // 检查权限
+    instance._isGranted = await instance._delegate!.checkAuth();
+    if (!instance._isGranted) {
+      throw StateError('Image picker permission not granted');
+    }
+
+    try {
+      final result = await instance._delegate!.pickImage(params, maxCount);
+      return result is T ? result : null;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 检查权限
+  static Future<bool> checkPermission() async {
+    if (instance._delegate == null) {
       return false;
     }
+    
+    instance._isGranted = await instance._delegate!.checkAuth();
+    return instance._isGranted;
   }
 
-  static Future<dynamic> picker({required dynamic params, int maxCount = 9}) async {
-    final isGrant = await YKImagePicker._checkAut();
-    final delegate = YKImagePicker._getInstance().delegate;
-    if (delegate != null && isGrant) {
-      return await delegate.pickImage(params, maxCount);
-    } else {
-      print("未设置获取权限");
-    }
+  /// 重置状态
+  static void reset() {
+    instance._delegate = null;
+    instance._isGranted = false;
   }
 }
