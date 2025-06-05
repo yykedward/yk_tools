@@ -112,6 +112,7 @@ class YkRecorder {
 
   dispose() async {
     if (_delegate != null) {
+      await end();
       await _delegate!.dispose();
       _delegate = null;
     }
