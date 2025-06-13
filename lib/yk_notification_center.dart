@@ -25,7 +25,7 @@ class YKNotificationCenter {
 
   YKNotificationCenter._();
 
-  StreamController<Map<String,YKNotification>> _observerStream = StreamController<Map<String,YKNotification>>.broadcast();
+  final StreamController<Map<String,YKNotification>> _observerStream = StreamController<Map<String,YKNotification>>.broadcast();
 
   void post(String name,{dynamic object, Map<String,dynamic>? userInfo}) {
     final notification = YKNotification(name, object, userInfo);

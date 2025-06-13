@@ -10,7 +10,7 @@ mixin YkRtcManagerDelegate {
 
   Future logout(dynamic params);
 
-  Future<void> enterRoom(dynamic params);
+  Future<void> enterRoom(String roomId, dynamic params);
 
   Future<void> exitRoom(dynamic params);
 
@@ -71,35 +71,35 @@ class YkRtcManager {
     return;
   }
 
-  Future login(dynamic params) {
+  Future login({dynamic params}) {
     return _delegate?.login(params) ?? Future.value();
   }
 
-  Future logout(dynamic params) {
+  Future logout({dynamic params}) {
     return _delegate?.logout(params) ?? Future.value();
   }
 
-  Future<void> enterRoom(dynamic params) async {
-    await _delegate?.enterRoom(params);
+  Future<void> enterRoom({required String roomId, dynamic params}) async {
+    await _delegate?.enterRoom(roomId, params);
     return;
   }
 
-  Future<void> exitRoom(dynamic params) async {
+  Future<void> exitRoom({required String roomId, dynamic params}) async {
     await _delegate?.exitRoom(params);
     return;
   }
 
-  Future<void> openSpeaker(bool isOpen) async {
+  Future<void> openSpeaker({required bool isOpen}) async {
     await _delegate?.openSpeaker(isOpen);
     return;
   }
 
-  Future<void> switchRole(bool isAnchor) async {
+  Future<void> switchRole({required bool isAnchor}) async {
     await _delegate?.switchRole(isAnchor);
     return;
   }
 
-  Future<void> openMic(bool isOpen) async {
+  Future<void> openMic({required bool isOpen}) async {
     await _delegate?.openMic(isOpen);
     return;
   }
@@ -114,18 +114,18 @@ class YkRtcManager {
     return;
   }
 
-  Future<void> startLocalPreview(bool frontCamera, int? viewId) async {
+  Future<void> startLocalPreview({bool frontCamera = false, int? viewId}) async {
     await _delegate?.startLocalPreview(frontCamera, viewId);
     return;
   }
 
-  Future<void> startRemoteView(String userId, int? viewId) async {
+  Future<void> startRemoteView({required String userId, int? viewId}) async {
     await _delegate?.startRemoteView(userId, viewId);
     return;
   }
 
   ///停止远端视频拉流
-  Future<void> stopRemoteView(String userId) async {
+  Future<void> stopRemoteView({required String userId}) async {
     await _delegate?.stopRemoteView(userId);
     return;
   }
@@ -137,7 +137,7 @@ class YkRtcManager {
   }
 
   ///切换摄像头
-  Future<int?> changeCamera(bool frontCamera) async {
+  Future<int?> changeCamera({required bool frontCamera}) async {
     return await _delegate?.changeCamera(frontCamera);
   }
 

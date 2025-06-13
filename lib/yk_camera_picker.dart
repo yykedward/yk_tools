@@ -4,13 +4,16 @@ import 'package:flutter/material.dart';
 /// 相机拍照代理接口
 mixin YKCameraPhotoDelegate {
   /// 初始化设置
-  Future<void> setup();
+  Future<void> init();
 
   /// 检查权限
   Future<bool> checkAuth();
 
   /// 拍照
   Future<dynamic> pickPhoto(Map<String, dynamic>? params);
+
+  /// 释放资源
+  Future<void> unInit();
 }
 
 /// 相机拍照工具类
@@ -21,23 +24,12 @@ class YKCameraPhoto {
 
   // 私有变量
   YKCameraPhotoDelegate? _delegate;
-  bool _isGranted = false;
-
-  /// 获取权限状态
-  bool get isGranted => _isGranted;
 
   /// 初始化设置
   static Future<void> setup({
     required YKCameraPhotoDelegate delegate,
   }) async {
     instance._delegate = delegate;
-    try {
-      await delegate.setup();
-      instance._isGranted = await delegate.checkAuth();
-    } catch (e) {
-      instance._isGranted = false;
-      rethrow;
-    }
   }
 
   /// 拍照
@@ -47,8 +39,8 @@ class YKCameraPhoto {
     }
 
     // 检查权限
-    instance._isGranted = await instance._delegate!.checkAuth();
-    if (!instance._isGranted) {
+    final isGranted = await instance._delegate!.checkAuth();
+    if (isGranted) {
       throw StateError('Camera permission not granted');
     }
 
@@ -60,19 +52,11 @@ class YKCameraPhoto {
     }
   }
 
-  /// 检查权限
-  static Future<bool> checkPermission() async {
-    if (instance._delegate == null) {
-      return false;
-    }
-    
-    instance._isGranted = await instance._delegate!.checkAuth();
-    return instance._isGranted;
-  }
-
   /// 重置状态
   static void reset() {
-    instance._delegate = null;
-    instance._isGranted = false;
+    instance._delegate?.unInit().then((value) {
+      instance._delegate = null;
+    });
+
   }
 }

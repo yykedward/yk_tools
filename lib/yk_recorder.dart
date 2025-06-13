@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 mixin YkRecorderDelegate {
   Future init();
 
-  Future dispose();
+  Future unInit();
 
   Future<bool> start(String toFilePath);
 
@@ -33,13 +33,15 @@ class YkRecorderConfig with ChangeNotifier {
 }
 
 class YkRecorder with ChangeNotifier {
+
   YkRecorderDelegate? _delegate;
   bool _isRecording = false;
   void Function(String? path, Duration? duration)? _onCompleteCallBack;
   String? _currentFilePath;
   Timer? _timer;
-  int duration = 0;
   bool _didDispose = false;
+
+  int duration = 0;
 
   Future init({required YkRecorderDelegate delegate}) {
     _delegate = delegate;
@@ -119,7 +121,7 @@ class YkRecorder with ChangeNotifier {
   Future _unInit() async {
     if (_delegate != null) {
       await end();
-      await _delegate!.dispose();
+      await _delegate!.unInit();
       _delegate = null;
     }
   }
