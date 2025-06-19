@@ -16,8 +16,6 @@ class YkInAppPushUtil {
 
   List<YkInAppPushUtilDelegate> _delegates = [];
 
-  List<YkInAppPushUtilDelegate> get delegates => _delegates;
-
   bool Function()? canNext;
 
   void add({required YkInAppPushUtilDelegate delegate, bool endLastPush = false}) async {
