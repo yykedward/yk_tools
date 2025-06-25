@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 mixin YkAudioUtilDelegate {
-
   Future init();
 
   Future dispose();
@@ -18,7 +16,6 @@ mixin YkAudioUtilDelegate {
 }
 
 class YkAudioUtil with ChangeNotifier {
-
   static YkAudioUtil? _instance;
 
   static YkAudioUtil get instance {
@@ -47,7 +44,7 @@ class YkAudioUtil with ChangeNotifier {
 
   Future regis({required String audioID, required String audioUrl}) async {
     if (_delegate != null) {
-     await _delegate!.regis(audioID, audioUrl);
+      await _delegate!.regis(audioID, audioUrl);
     }
   }
 

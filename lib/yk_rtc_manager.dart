@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-
 
 mixin YkRtcManagerDelegate {
-
   Future<void> init();
 
   Future login(dynamic params);
@@ -47,9 +44,7 @@ mixin YkRtcManagerDelegate {
   Future<int?> changeCamera(bool frontCamera);
 }
 
-
 class YkRtcManager {
-
   static YkRtcManager? _instance;
 
   static YkRtcManager get instance {

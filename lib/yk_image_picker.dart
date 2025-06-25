@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 
 /// 图片选择器代理接口
 mixin YKImagePickerDelegate {

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 mixin YkRecorderDelegate {
@@ -33,7 +32,6 @@ class YkRecorderConfig with ChangeNotifier {
 }
 
 class YkRecorder with ChangeNotifier {
-
   YkRecorderDelegate? _delegate;
   bool _isRecording = false;
   void Function(String? path, Duration? duration)? _onCompleteCallBack;

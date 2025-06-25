@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class YkParamsUtil {
   // 单例实现
   static final YkParamsUtil instance = YkParamsUtil._();
+
   YkParamsUtil._();
 
   // 私有变量

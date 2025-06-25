@@ -21,11 +21,11 @@ class _LogData {
   });
 
   Map<String, dynamic> toJson() => {
-    'event': event,
-    'title': title,
-    'params': params,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'event': event,
+        'title': title,
+        'params': params,
+        'timestamp': timestamp.toIso8601String(),
+      };
 }
 
 class YkDigLogUtilDelegate {
@@ -47,15 +47,16 @@ class YkDigLogUtilDelegate {
 class YkDigLogUtil {
   // 单例实现
   static final YkDigLogUtil instance = YkDigLogUtil._();
+
   YkDigLogUtil._();
 
   YkDigLogUtilDelegate? _delegate;
   String _currentFileName = '';
   bool _isWriting = false;
   final List<String> _logQueue = [];
-  
+
   // 将 const 改为 static 变量，使其可修改
-  static int maxFileSize = 1024 * 5;  // 默认值为 5KB
+  static int maxFileSize = 1024 * 5; // 默认值为 5KB
   static const String logExtension = '.log';
   static const String archivedExtension = '.archived';
   static const String uploadedExtension = '.uploaded';
@@ -87,9 +88,9 @@ class YkDigLogUtil {
     required dynamic params,
   }) async {
     final logData = await _delegate?.handleData?.call(event, title, params) ?? '';
-    
+
     _logQueue.add(logData);
-    
+
     _delegate?.logCallBack?.call(_LogData(
       event: event,
       title: title,
@@ -127,7 +128,7 @@ class YkDigLogUtil {
 
     try {
       await file.writeAsString('$logEntry\n', mode: FileMode.append);
-      
+
       if (await file.length() > maxFileSize) {
         await _archiveCurrentFile(file);
         _currentFileName = '';
@@ -141,7 +142,7 @@ class YkDigLogUtil {
   Future<void> _archiveAndUpload() async {
     final dir = await _getLogDirectory();
     final files = dir.listSync();
-    
+
     for (final file in files) {
       final path = file.path;
       if (path.endsWith(uploadedExtension)) {

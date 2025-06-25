@@ -34,6 +34,7 @@ mixin YKDiskManagerModule {
 class YKDiskManager {
   // 单例实现
   static final YKDiskManager instance = YKDiskManager._();
+
   YKDiskManager._();
 
   // 模块处理器映射表
@@ -91,12 +92,10 @@ class YKDiskManager {
   }
 
   /// 获取已注册的模块列表
-  static List<String> get registeredModules => 
-      List.unmodifiable(instance._moduleHandlers.keys);
+  static List<String> get registeredModules => List.unmodifiable(instance._moduleHandlers.keys);
 
   /// 检查模块是否已注册
-  static bool hasModule(String module) => 
-      instance._moduleHandlers.containsKey(module);
+  static bool hasModule(String module) => instance._moduleHandlers.containsKey(module);
 
   /// 清除所有模块
   static void clear() => instance._moduleHandlers.clear();

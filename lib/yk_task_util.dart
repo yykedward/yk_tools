@@ -68,7 +68,7 @@ class YKTaskUtil {
         // 任务内部调用此方法来执行下一个任务
         _nextTask();
       });
-      
+
       _lastError = null;
     } catch (e) {
       _lastError = e.toString();
@@ -79,7 +79,7 @@ class YKTaskUtil {
   /// 回滚到上一个任务
   void rollBackToLastTask() {
     if (_currentIndex <= 0) return;
-    
+
     _currentIndex = _lastExecutedIndex;
     _lastError = null;
   }
@@ -113,7 +113,7 @@ class YKTaskUtil {
         taskName: taskName,
       ),
     );
-    
+
     // 重新排序
     _updateTaskSort();
   }
@@ -121,7 +121,7 @@ class YKTaskUtil {
   /// 移除指定位置的任务
   void removeTask(int index) {
     if (index < 0 || index >= _taskList.length) return;
-    
+
     _taskList.removeAt(index);
     _updateTaskSort();
   }

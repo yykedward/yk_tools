@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 
 /// Socket 连接状态
 enum SocketState {
@@ -113,7 +112,7 @@ class YKSocket {
     _controller = controller;
     _delegate = delegate;
     controller._socket = this;
-    
+
     // 设置控制器回调
     controller._callback = YKSocketControllerCallback(
       connect: _connect,
@@ -195,9 +194,7 @@ class YKSocket {
 
   /// 重连
   Future<void> _reconnect() async {
-    if (_state == SocketState.reconnecting || 
-        _reconnectAttempts >= maxReconnectAttempts ||
-        _url == null) {
+    if (_state == SocketState.reconnecting || _reconnectAttempts >= maxReconnectAttempts || _url == null) {
       return;
     }
 
@@ -221,7 +218,7 @@ class YKSocket {
       onError: _handleError,
       cancelOnError: false,
     );
-    
+
     _updateState(SocketState.connected);
   }
 

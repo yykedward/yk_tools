@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 
 /// 相机拍照代理接口
 mixin YKCameraPhotoDelegate {
