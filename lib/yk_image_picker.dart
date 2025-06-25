@@ -26,25 +26,28 @@ class YKImagePicker {
   YKImagePickerDelegate? _delegate;
 
   /// 初始化设置
-  static Future<void> setup({required YKImagePickerDelegate delegate}) async {
-    instance._delegate = delegate;
-    await instance._delegate?.init();
+  Future<void> setup({required YKImagePickerDelegate delegate}) async {
+    if (_delegate != null) {
+      await reset();
+    }
+    _delegate = delegate;
+    await _delegate?.init();
   }
 
   /// 选择图片
-  static Future<T?> pick<T>({dynamic params, int maxCount = 9}) async {
-    if (instance._delegate == null) {
+  Future<T?> pick<T>({dynamic params, int maxCount = 9}) async {
+    if (_delegate == null) {
       throw StateError('Image picker delegate not set. Call setup() first.');
     }
 
     // 检查权限
-    final hasPermission = await instance._delegate!.checkAuth();
+    final hasPermission = await _delegate!.checkAuth();
     if (!hasPermission) {
       throw StateError('Image picker permission not granted');
     }
 
     try {
-      final result = await instance._delegate!.pickImage(params, maxCount);
+      final result = await _delegate!.pickImage(params, maxCount);
       return result is T ? result : null;
     } catch (e) {
       rethrow;
@@ -52,9 +55,10 @@ class YKImagePicker {
   }
 
   /// 重置状态
-  static void reset() {
-    instance._delegate?.unInit().then((value) {
-      instance._delegate = null;
-    });
+  Future reset() {
+    return _delegate?.unInit().then((value) {
+      _delegate = null;
+      return;
+    }) ?? Future.value();
   }
 }
