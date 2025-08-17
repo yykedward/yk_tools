@@ -1,39 +1,128 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# yk_tools
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A versatile Flutter package providing essential utilities for common mobile development tasks, including IM management, RTC (Real-Time Communication), storage, audio handling, and more.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- **IM Management**: Handle instant messaging with connection state tracking, message handling, and group operations.
+- **RTC Utilities**: Manage real-time communication including room management, audio/video controls.
+- **Disk Management**: Register and manage disk modules for various storage operations.
+- **Media Handling**: Record audio, play audio files with progress tracking.
+- **Media Picking**: Select images from gallery and capture photos using device camera.
+- **Socket Communication**: WebSocket implementation with auto-reconnect functionality.
+- **Task Scheduling**: Execute tasks in sequence with rollback capabilities.
+- **Storage Utilities**: Manage persistent storage with support for one-time and cached data.
+- **In-app Push**: Handle in-app push notifications with queuing mechanism.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+### Prerequisites
+- Flutter SDK (>=1.17.0)
+- Dart SDK (^3.5.4)
+
+### Installation
+Add this to your package's `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  yk_tools:
+    git:
+      url: https://github.com/yykedward/yk_tools.git
+      ref: main
+```
+
+Then run:
+```bash
+flutter pub get
+```
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+### IM Manager Example
 
 ```dart
-const like = 'sample';
+import 'package:yk_tools/yk_im_manager.dart';
+
+// Implement the delegate
+class MyImDelegate with YkImManagerDelegate {
+  // Implement all required methods
+  @override
+  Future<void> init(
+    MessageCallback onMessageReceived,
+    KickedOfflineCallback onKickedOffline,
+    dynamic params,
+  ) async {
+    // Initialize your IM service
+  }
+
+  // Other method implementations...
+}
+
+// Initialize IM Manager
+void setupIm() async {
+  await YkImManager.instance.config(delegate: MyImDelegate());
+  await YkImManager.instance.init(
+    params: {'apiKey': 'your_api_key'},
+    onKickedOffline: () {
+      // Handle kicked offline
+    },
+  );
+  
+  // Listen to messages
+  YkImManager.instance.messageStream.listen((message) {
+    // Handle incoming messages
+  });
+}
+```
+
+### Storage Example
+
+```dart
+import 'package:yk_tools/yk_storage.dart';
+
+// Implement storage delegate
+class MyStorageDelegate with YkStorageDelegate {
+  // Implement required methods
+  @override
+  Future<void> init() async {
+    // Initialize storage
+  }
+
+  @override
+  Future<void> save({required String key, required dynamic data}) async {
+    // Save implementation
+  }
+
+  @override
+  Future<dynamic> get({required String key}) async {
+    // Get implementation
+    return null;
+  }
+}
+
+// Use storage
+void setupStorage() async {
+  await YkStorage.init(delegate: MyStorageDelegate());
+  
+  // Save data
+  await YkStorage.save(key: 'user_name', data: 'John Doe', isOnce: false);
+  
+  // Retrieve data
+  final userName = await YkStorage.get<String>(key: 'user_name');
+}
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+### Contributing
+- Fork the repository
+- Create your feature branch (`git checkout -b feature/amazing-feature`)
+- Commit your changes (`git commit -m 'Add some amazing feature'`)
+- Push to the branch (`git push origin feature/amazing-feature`)
+- Open a Pull Request
+
+### Issues
+Please file issues [here](https://github.com/yykedward/yk_tools/issues) to report bugs or request features.
+
+### License
+This package is released under the MIT License. See [LICENSE](LICENSE) for details.
