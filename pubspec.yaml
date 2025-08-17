@@ -1,8 +1,8 @@
 name: yk_tools
 description: "YKTools"
 version: 0.0.2
-homepage: homepage:https://github.com/yykedward/yk_tools
-repository: homepage:https://github.com/yykedward/yk_tools.git
+homepage: https://github.com/yykedward/yk_tools
+repository: https://github.com/yykedward/yk_tools.git
 
 environment:
   sdk: ^3.5.4
